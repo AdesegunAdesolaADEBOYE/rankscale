@@ -1,0 +1,71 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b34">
+  <title>Sign in | RankScale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+</head>
+<body class="login-body">
+  <main class="login-layout">
+    <section class="login-story" aria-label="RankScale workspace">
+      <a class="brand brand-light" href="{% url 'login' %}"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>rankscale<span class="brand-period">.</span></span></a>
+      <div class="story-copy">
+        <p class="eyebrow eyebrow-light"><span></span> THE SEARCH GROWTH WORKSPACE</p>
+        <h1>Make organic growth<br>feel <em>intentional.</em></h1>
+        <p class="story-description">One focused workspace for the campaigns, content, and momentum behind your next stage of growth.</p>
+      </div>
+      <div class="story-visual" aria-hidden="true">
+        <div class="visual-header"><span class="visual-dots"><i></i><i></i><i></i></span><span>YOUR SEARCH WORKSPACE</span><span class="visual-live"><b></b> READY</span></div>
+        <div class="visual-content">
+          <div class="visual-side"><span class="visual-logo">R</span><i></i><i></i><i></i><i></i></div>
+          <div class="visual-board">
+            <div class="visual-board-top"><div><small>CAMPAIGN OVERVIEW</small><strong>Grow with a plan.</strong></div><span class="visual-plus">+</span></div>
+            <div class="visual-grid">
+              <div class="visual-tile"><span>01</span><strong>Find your<br>opportunity</strong><i class="tile-line tile-line-one"></i><i class="tile-line tile-line-two"></i></div>
+              <div class="visual-tile visual-tile-accent"><span>02</span><strong>Build your<br>campaign</strong><i class="tile-orbit"></i></div>
+              <div class="visual-tile visual-tile-wide"><span>03</span><strong>Turn intent into<br>lasting momentum</strong><div class="tile-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="story-footer">A clearer way to build what ranks.</p>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-mobile-brand"><a class="brand" href="{% url 'login' %}"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>rankscale<span class="brand-period">.</span></span></a></div>
+      <div class="login-card">
+        <div class="login-heading">
+          <span class="login-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 7v5.2c0 4.4-2.8 7.2-7 8.8-4.2-1.6-7-4.4-7-8.8V7l7-3.5Z"/><path d="m9.2 12.2 1.8 1.8 3.8-4"/></svg></span>
+          <p class="eyebrow">WELCOME BACK</p>
+          <h2>Sign in to RankScale</h2>
+          <p class="login-subtitle">Your next search opportunity is waiting.</p>
+        </div>
+        <form method="post" class="login-form" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
+          {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+          <div class="field-group">
+            <label for="{{ form.username.id_for_label }}">Username</label>
+            <input id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" type="text" value="{{ form.username.value|default:'' }}" autocomplete="username" placeholder="Your username" required autofocus>
+            {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="field-group">
+            <div class="field-label-row"><label for="{{ form.password.id_for_label }}">Password</label></div>
+            <input id="{{ form.password.id_for_label }}" name="{{ form.password.html_name }}" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+          </div>
+          <button class="button button-primary button-full" type="submit">Sign in <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="login-note">New to RankScale? <a class="auth-switch-link" href="{% url 'signup' %}">Create an account</a></p>
+      </div>
+      <footer class="login-footer"><span>© 2026 RankScale</span><span>Built for the long game.</span></footer>
+    </section>
+  </main>
+</body>
+</html>

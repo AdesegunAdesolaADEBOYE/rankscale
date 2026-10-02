@@ -1,0 +1,56 @@
+services:
+  web:
+    build: .
+    command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-only-change-me}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rankscale}:${POSTGRES_PASSWORD:-rankscale-local-only}@db:5432/${POSTGRES_DB:-rankscale}
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: celery -A config worker --loglevel=info
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-only-change-me}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rankscale}:${POSTGRES_PASSWORD:-rankscale-local-only}@db:5432/${POSTGRES_DB:-rankscale}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rankscale}
+      POSTGRES_USER: ${POSTGRES_USER:-rankscale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rankscale-local-only}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rankscale} -d ${POSTGRES_DB:-rankscale}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:

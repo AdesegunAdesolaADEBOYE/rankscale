@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+{% block title %}Overview{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">{{ today|date:"l, j F Y"|upper }} <span class="heading-spark">✳</span></p>
+    <h1>Good to see you, {{ request.user.first_name|default:request.user.username }}.</h1>
+    <p class="page-subtitle">A clear view of your search growth, all in one place.</p>
+  </div>
+  <a class="button button-primary" href="{% url 'campaign_create' %}"><span class="button-plus" aria-hidden="true">+</span> New campaign</a>
+</section>
+
+<section class="metric-grid" aria-label="Campaign summary">
+  <article class="metric-card metric-card-primary">
+    <div class="metric-top"><span>Total campaigns</span><span class="metric-icon metric-icon-green"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h8"/><circle cx="15" cy="14.5" r="2"/></svg></span></div>
+    <div class="metric-value">{{ total_campaigns }}<span class="metric-unit">campaigns</span></div>
+    <div class="metric-foot"><span class="metric-dot"></span>In your workspace</div>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Active</span><span class="metric-icon metric-icon-yellow"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10.5 3.5 3.5L16 5.5"/></svg></span></div>
+    <div class="metric-value">{{ active_campaigns }}<span class="metric-unit">campaigns</span></div>
+    <div class="metric-foot">Currently in progress</div>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>In draft</span><span class="metric-icon metric-icon-lilac"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M11.8 3.3 16.7 8.2M4 16l3.3-.7 8.8-8.8a1.7 1.7 0 0 0-2.4-2.4l-8.8 8.8L4 16Z"/></svg></span></div>
+    <div class="metric-value">{{ draft_campaigns }}<span class="metric-unit">campaigns</span></div>
+    <div class="metric-foot">Ready when you are</div>
+  </article>
+</section>
+
+<section class="campaign-section">
+  <div class="section-heading">
+    <div><p class="eyebrow">YOUR WORK</p><h2>Campaigns <span class="count-pill">{{ total_campaigns }}</span></h2></div>
+    <a class="text-link" href="{% url 'campaign_create' %}">Create campaign <span aria-hidden="true">→</span></a>
+  </div>
+  <form class="filter-bar" method="get" action="{% url 'dashboard' %}">
+    <label class="search-field"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.8"/><path d="m13 13 4 4"/></svg><input type="search" name="q" value="{{ search_query }}" placeholder="Search campaigns, websites, keywords" aria-label="Search campaigns"></label>
+    <label class="select-field"><span class="sr-only">Filter by status</span><select name="status" onchange="this.form.submit()"><option value="">All statuses</option><option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option><option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option><option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>Paused</option></select></label>
+    <button class="button button-quiet" type="submit">Search</button>
+  </form>
+
+  {% if campaigns %}
+    <div class="table-wrap">
+      <table class="campaign-table">
+        <thead><tr><th>CAMPAIGN</th><th>WEBSITE</th><th>PRIMARY KEYWORD</th><th>STATUS</th><th>LAST UPDATED</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          {% for campaign in campaigns %}
+          <tr>
+            <td><div class="campaign-name-cell"><span class="campaign-monogram">{{ campaign.name|first|upper }}</span><strong>{{ campaign.name }}</strong></div></td>
+            <td><a class="website-link" href="{{ campaign.website_url }}" target="_blank" rel="noreferrer">{{ campaign.website_url }}</a></td>
+            <td><span class="keyword-text">{{ campaign.target_keyword }}</span></td>
+            <td><span class="status-pill status-{{ campaign.status }}"><i></i>{{ campaign.get_status_display }}</span></td>
+            <td class="date-cell">{{ campaign.updated_at|date:"M j, Y" }}</td>
+            <td class="row-action-cell"><span class="row-arrow" aria-hidden="true">↗</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-art" aria-hidden="true"><span class="empty-ring empty-ring-one"></span><span class="empty-ring empty-ring-two"></span><span class="empty-spark">✳</span><span class="empty-card empty-card-one"></span><span class="empty-card empty-card-two"></span></div>
+      {% if search_query or status_filter %}
+        <h3>No campaigns match those filters</h3><p>Try a different search or clear the status filter.</p>
+        <a class="button button-secondary" href="{% url 'dashboard' %}">Clear filters</a>
+      {% else %}
+        <p class="eyebrow">YOUR FIRST MOVE</p><h3>Give your growth a starting point.</h3><p>Create a campaign to bring your website and target keyword into focus.</p>
+        <a class="button button-primary" href="{% url 'campaign_create' %}"><span class="button-plus" aria-hidden="true">+</span> Create your first campaign</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+<section class="next-step-strip"><span class="next-step-icon">✳</span><div><strong>Small steps, compounding returns.</strong><span>Set up a campaign first. Pages and lead insights will follow as RankScale grows.</span></div><span class="next-step-tag">YOUR WORKSPACE</span></section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+{% block title %}New campaign{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard' %}">Overview</a><span class="breadcrumb-slash">/</span>New campaign{% endblock %}
+{% block content %}
+<section class="page-heading form-page-heading">
+  <div><p class="eyebrow">CAMPAIGN SETUP</p><h1>Start with a clear target.</h1><p class="page-subtitle">Give this campaign a focus. You can refine it as your strategy develops.</p></div>
+</section>
+<div class="campaign-form-layout">
+  <form method="post" class="campaign-form-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-card-heading"><span class="form-step">01</span><div><h2>Campaign details</h2><p>Start with the essentials. You can update these later.</p></div></div>
+    <div class="field-group"><label for="{{ form.name.id_for_label }}">Campaign name <span class="required-mark">*</span></label>{{ form.name }}{% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}<small>Use a name your team will recognize.</small></div>
+    <div class="field-group"><label for="{{ form.website_url.id_for_label }}">Website URL <span class="required-mark">*</span></label>{{ form.website_url }}{% for error in form.website_url.errors %}<p class="field-error">{{ error }}</p>{% endfor %}<small>Include https:// so we know which site to focus on.</small></div>
+    <div class="field-group"><label for="{{ form.target_keyword.id_for_label }}">Primary target keyword <span class="required-mark">*</span></label>{{ form.target_keyword }}{% for error in form.target_keyword.errors %}<p class="field-error">{{ error }}</p>{% endfor %}<small>Choose the search topic this campaign will center around.</small></div>
+    <div class="field-group"><label for="{{ form.status.id_for_label }}">Campaign status</label>{{ form.status }}{% for error in form.status.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+    <div class="form-actions"><a class="button button-secondary" href="{% url 'dashboard' %}">Cancel</a><button class="button button-primary" type="submit">Create campaign <span aria-hidden="true">→</span></button></div>
+  </form>
+  <aside class="form-aside"><span class="aside-mark">✳</span><p class="eyebrow">A GOOD CAMPAIGN STARTS HERE</p><h3>One clear goal beats a dozen vague ones.</h3><p>Pick a meaningful keyword and the website you want to grow. RankScale keeps your work organized around that focus.</p><div class="aside-rule"></div><div class="aside-note"><span>01</span><span>Your campaign stays private to your account.</span></div></aside>
+</div>
+{% endblock %}

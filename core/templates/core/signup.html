@@ -1,0 +1,57 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b34">
+  <title>Create account | RankScale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+</head>
+<body class="login-body">
+  <main class="login-layout">
+    <section class="login-story" aria-label="RankScale workspace">
+      <a class="brand brand-light" href="{% url 'login' %}"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>rankscale<span class="brand-period">.</span></span></a>
+      <div class="story-copy">
+        <p class="eyebrow eyebrow-light"><span></span> THE SEARCH GROWTH WORKSPACE</p>
+        <h1>Make organic growth<br>feel <em>intentional.</em></h1>
+        <p class="story-description">One focused workspace for the campaigns, content, and momentum behind your next stage of growth.</p>
+      </div>
+      <div class="story-visual" aria-hidden="true">
+        <div class="visual-header"><span class="visual-dots"><i></i><i></i><i></i></span><span>YOUR SEARCH WORKSPACE</span><span class="visual-live"><b></b> READY</span></div>
+        <div class="visual-content"><div class="visual-side"><span class="visual-logo">R</span><i></i><i></i><i></i><i></i></div><div class="visual-board"><div class="visual-board-top"><div><small>CAMPAIGN OVERVIEW</small><strong>Grow with a plan.</strong></div><span class="visual-plus">+</span></div><div class="visual-grid"><div class="visual-tile"><span>01</span><strong>Find your<br>opportunity</strong><i class="tile-line tile-line-one"></i><i class="tile-line tile-line-two"></i></div><div class="visual-tile visual-tile-accent"><span>02</span><strong>Build your<br>campaign</strong><i class="tile-orbit"></i></div><div class="visual-tile visual-tile-wide"><span>03</span><strong>Turn intent into<br>lasting momentum</strong><div class="tile-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div></div></div>
+      </div>
+      <p class="story-footer">A clearer way to build what ranks.</p>
+    </section>
+    <section class="login-panel">
+      <div class="login-mobile-brand"><a class="brand" href="{% url 'login' %}"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>rankscale<span class="brand-period">.</span></span></a></div>
+      <div class="login-card signup-card">
+        <div class="login-heading">
+          <span class="login-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 7v5.2c0 4.4-2.8 7.2-7 8.8-4.2-1.6-7-4.4-7-8.8V7l7-3.5Z"/><path d="M12 8v8m-4-4h8"/></svg></span>
+          <p class="eyebrow">YOUR WORKSPACE STARTS HERE</p>
+          <h2>Create your account</h2>
+          <p class="login-subtitle">Set up your RankScale workspace in a moment.</p>
+        </div>
+        <form method="post" class="login-form signup-form" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+          <div class="field-group"><label for="{{ form.username.id_for_label }}">Username</label><input id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" type="text" value="{{ form.username.value|default:'' }}" autocomplete="username" placeholder="Choose a username" required autofocus>{% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+          <div class="signup-name-row">
+            <div class="field-group"><label for="{{ form.first_name.id_for_label }}">First name <span class="optional-label">Optional</span></label><input id="{{ form.first_name.id_for_label }}" name="{{ form.first_name.html_name }}" type="text" value="{{ form.first_name.value|default:'' }}" autocomplete="given-name" placeholder="First name">{% for error in form.first_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+            <div class="field-group"><label for="{{ form.last_name.id_for_label }}">Last name <span class="optional-label">Optional</span></label><input id="{{ form.last_name.id_for_label }}" name="{{ form.last_name.html_name }}" type="text" value="{{ form.last_name.value|default:'' }}" autocomplete="family-name" placeholder="Last name">{% for error in form.last_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+          </div>
+          <div class="field-group"><label for="{{ form.email.id_for_label }}">Email address</label><input id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email" placeholder="you@example.com" required>{% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+          <div class="field-group"><label for="{{ form.password1.id_for_label }}">Password</label><input id="{{ form.password1.id_for_label }}" name="{{ form.password1.html_name }}" type="password" autocomplete="new-password" placeholder="Create a password" required>{% for error in form.password1.errors %}<p class="field-error">{{ error }}</p>{% endfor %}{% if form.password1.help_text %}<div class="password-help">{{ form.password1.help_text|safe }}</div>{% endif %}</div>
+          <div class="field-group"><label for="{{ form.password2.id_for_label }}">Confirm password</label><input id="{{ form.password2.id_for_label }}" name="{{ form.password2.html_name }}" type="password" autocomplete="new-password" placeholder="Enter your password again" required>{% for error in form.password2.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+          <button class="button button-primary button-full" type="submit">Create account <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="login-note">Already have an account? <a class="auth-switch-link" href="{% url 'login' %}">Sign in</a></p>
+      </div>
+      <footer class="login-footer"><span>© 2026 RankScale</span><span>Built for the long game.</span></footer>
+    </section>
+  </main>
+</body>
+</html>
