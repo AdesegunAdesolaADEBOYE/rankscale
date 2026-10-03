@@ -12,7 +12,7 @@ class CampaignAdmin(admin.ModelAdmin):
 
 @admin.register(Dataset)
 class DatasetAdmin(admin.ModelAdmin):
-    list_display = ("original_filename", "campaign", "status", "row_count", "created_at")
-    list_filter = ("status", "created_at")
+    list_display = ("original_filename", "source_format", "campaign", "status", "row_count", "created_at")
+    list_filter = ("source_format", "status", "created_at")
     search_fields = ("original_filename", "campaign__name", "campaign__owner__username")
     readonly_fields = ("columns", "row_count", "error_message", "created_at", "updated_at")

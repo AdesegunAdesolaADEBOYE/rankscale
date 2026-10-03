@@ -4,21 +4,42 @@
 {% block extra_head %}{% if has_running_import %}<meta http-equiv="refresh" content="5">{% endif %}{% endblock %}
 {% block content %}
 <section class="page-heading dataset-page-heading">
-  <div><p class="eyebrow">CAMPAIGN DATA</p><h1>{{ campaign.name }}</h1><p class="page-subtitle">Upload a CSV to give this campaign structured data to work with.</p></div>
+  <div><p class="eyebrow">CAMPAIGN DATA</p><h1>{{ campaign.name }}</h1><p class="page-subtitle">Bring your campaign data together from files or Google Sheets.</p></div>
   <a class="button button-secondary" href="{% url 'dashboard' %}">Back to campaigns</a>
 </section>
 
 <div class="dataset-layout">
   <section class="dataset-upload-card">
-    <div class="form-card-heading"><span class="form-step">01</span><div><h2>Import a dataset</h2><p>Upload a UTF-8 CSV file with a header row and at least one data row.</p></div></div>
+    <div class="form-card-heading"><span class="form-step">01</span><div><h2>Upload a file</h2><p>Import CSV, Excel, JSON, or PDF files.</p></div></div>
     <form method="post" enctype="multipart/form-data" class="dataset-upload-form">
-      {% csrf_token %}
-      {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
-      <div class="field-group"><label for="{{ form.file.id_for_label }}">CSV file <span class="required-mark">*</span></label>{{ form.file }}{% for error in form.file.errors %}<p class="field-error">{{ error }}</p>{% endfor %}<small>Maximum file size: 10 MB. Up to 50 columns and 100,000 data rows.</small></div>
-      <button class="button button-primary" type="submit">Upload and import <span aria-hidden="true">→</span></button>
+      {% csrf_token %}<input type="hidden" name="source" value="file">
+      {% if upload_form.non_field_errors %}<div class="form-alert" role="alert">{{ upload_form.non_field_errors }}</div>{% endif %}
+      <div class="field-group"><label for="{{ upload_form.file.id_for_label }}">Data file <span class="required-mark">*</span></label>{{ upload_form.file }}{% for error in upload_form.file.errors %}<p class="field-error">{{ error }}</p>{% endfor %}<small>CSV, XLSX, JSON, or PDF. Maximum file size: 10 MB.</small></div>
+      <button class="button button-primary" type="submit">Upload and import <span aria-hidden="true">&gt;</span></button>
     </form>
   </section>
-  <aside class="dataset-info-card"><span class="aside-mark">✳</span><p class="eyebrow">HOW IMPORTS WORK</p><h2>Your source data stays organized.</h2><p>Each CSV is checked in the background. Its column names and rows are stored with this campaign and remain private to your account.</p><div class="dataset-info-line"><span class="metric-dot"></span>CSV files only</div><div class="dataset-info-line"><span class="metric-dot"></span>UTF-8 text columns</div><div class="dataset-info-line"><span class="metric-dot"></span>Imports can be retried if a file needs fixing</div></aside>
+
+  <section class="dataset-upload-card">
+    <div class="form-card-heading"><span class="form-step">02</span><div><h2>Import Google Sheets</h2><p>Paste a sheet link or connect Google for private sheets.</p></div></div>
+    <form method="post" class="dataset-upload-form">
+      {% csrf_token %}<input type="hidden" name="source" value="google_sheet">
+      {% if sheet_form.non_field_errors %}<div class="form-alert" role="alert">{{ sheet_form.non_field_errors }}</div>{% endif %}
+      <div class="field-group"><label for="{{ sheet_form.url.id_for_label }}">Google Sheets link</label>{{ sheet_form.url }}{% for error in sheet_form.url.errors %}<p class="field-error">{{ error }}</p>{% endfor %}<small>Private sheets require a connected Google account with view access.</small></div>
+      <button class="button button-primary" type="submit">Import sheet <span aria-hidden="true">&gt;</span></button>
+    </form>
+    <div class="google-connection">
+      {% if google_connected %}
+        <span class="google-connection-status"><i></i>Google account connected</span>
+        <form method="post" action="{% url 'google_oauth_disconnect' %}">{% csrf_token %}<button class="text-link" type="submit">Disconnect</button></form>
+      {% elif google_oauth_configured %}
+        <a class="button button-secondary google-connect-button" href="{% url 'google_oauth_authorize' %}">Connect Google account</a>
+      {% else %}
+        <p class="google-setup-note">For private sheets, an admin must configure the Google OAuth client in the environment.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <aside class="dataset-info-card"><p class="eyebrow">IMPORT GUIDELINES</p><h2>Files stay private to this campaign.</h2><p>Imports run in the background. CSV and spreadsheets use the first row as headers. PDF files are imported as one text row per page; scanned image PDFs need OCR and are not supported yet.</p><div class="dataset-info-grid"><div class="dataset-info-line"><span class="metric-dot"></span>Maximum 10 MB per source</div><div class="dataset-info-line"><span class="metric-dot"></span>Up to 50 columns and 100,000 rows</div><div class="dataset-info-line"><span class="metric-dot"></span>Public Sheets links need no Google connection</div></div></aside>
 </div>
 
 <section class="dataset-list-section">
@@ -28,16 +49,16 @@
       {% for dataset in datasets %}
       <article class="dataset-item">
         <span class="dataset-file-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M5 2.5h6l4 4v11H5zM11 2.5v4h4M7.5 10h5M7.5 13h5"/></svg></span>
-        <div class="dataset-main"><div class="dataset-title-row"><h3>{{ dataset.original_filename }}</h3><span class="status-pill status-{{ dataset.status }}"><i></i>{{ dataset.get_status_display }}</span></div><p class="dataset-meta">{% if dataset.status == 'ready' %}{{ dataset.row_count }} rows · {{ dataset.columns|length }} columns{% elif dataset.status == 'failed' %}{{ dataset.error_message }}{% elif dataset.status == 'processing' %}Reading and validating rows…{% else %}Waiting for a worker…{% endif %}</p>
+        <div class="dataset-main"><div class="dataset-title-row"><h3>{{ dataset.original_filename }}</h3><span class="status-pill status-{{ dataset.status }}"><i></i>{{ dataset.get_status_display }}</span></div><p class="dataset-meta">{% if dataset.status == 'ready' %}{{ dataset.row_count }} rows, {{ dataset.columns|length }} columns{% elif dataset.status == 'failed' %}{{ dataset.error_message }}{% elif dataset.status == 'processing' %}Reading and validating rows...{% else %}Waiting for a worker...{% endif %}</p>
           {% if dataset.status == 'ready' %}<div class="dataset-columns" aria-label="Dataset columns">{% for column in dataset.columns %}<span>{{ column }}</span>{% endfor %}</div>{% endif %}
-          {% if dataset.status == 'failed' %}<form method="post" action="{% url 'dataset_retry' campaign.id dataset.id %}" class="dataset-retry-form">{% csrf_token %}<button class="text-link" type="submit">Retry import <span aria-hidden="true">→</span></button></form>{% endif %}
+          {% if dataset.status == 'failed' %}<form method="post" action="{% url 'dataset_retry' campaign.id dataset.id %}" class="dataset-retry-form">{% csrf_token %}<button class="text-link" type="submit">Retry import <span aria-hidden="true">&gt;</span></button></form>{% endif %}
         </div>
         <time class="dataset-date" datetime="{{ dataset.created_at|date:'c' }}">{{ dataset.created_at|date:'M j, Y' }}</time>
       </article>
       {% endfor %}
     </div>
   {% else %}
-    <div class="dataset-empty"><span class="empty-spark" aria-hidden="true">✳</span><h3>No datasets yet</h3><p>Upload your first CSV to start building this campaign’s data foundation.</p></div>
+    <div class="dataset-empty"><span class="empty-spark" aria-hidden="true">*</span><h3>No datasets yet</h3><p>Upload your first data source to start building this campaign's data foundation.</p></div>
   {% endif %}
 </section>
 {% endblock %}

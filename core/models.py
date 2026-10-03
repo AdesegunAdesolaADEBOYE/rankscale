@@ -32,6 +32,13 @@ class Campaign(models.Model):
 
 
 class Dataset(models.Model):
+    class SourceFormat(models.TextChoices):
+        CSV = "csv", "CSV"
+        XLSX = "xlsx", "Excel workbook"
+        JSON = "json", "JSON"
+        PDF = "pdf", "PDF"
+        GOOGLE_SHEET = "google_sheet", "Google Sheets"
+
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
         PROCESSING = "processing", "Processing"
@@ -44,7 +51,13 @@ class Dataset(models.Model):
         related_name="datasets",
     )
     original_filename = models.CharField(max_length=255)
-    file = models.FileField(upload_to="datasets/%Y/%m/%d")
+    source_format = models.CharField(
+        max_length=16,
+        choices=SourceFormat.choices,
+        default=SourceFormat.CSV,
+    )
+    source_url = models.URLField(max_length=500, blank=True)
+    file = models.FileField(upload_to="datasets/%Y/%m/%d", blank=True)
     status = models.CharField(
         max_length=12,
         choices=Status.choices,
@@ -80,3 +93,17 @@ class DatasetRow(models.Model):
                 name="unique_dataset_row_number",
             )
         ]
+
+
+class GoogleSheetsConnection(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="google_sheets_connection",
+    )
+    encrypted_refresh_token = models.TextField()
+    scopes = models.CharField(max_length=500, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Google Sheets connection for {self.user}"

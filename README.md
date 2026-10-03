@@ -36,9 +36,11 @@ Use Python 3.11 or newer. Create and activate a virtual environment, install `re
 
 ## Dataset ingestion
 
-Create a campaign, open its **Data** link from the dashboard, then upload a UTF-8 CSV with a header row. Files up to 10 MB, 50 columns, and 100,000 data rows are accepted. RankScale validates the headers and row widths, then stores each row as JSON associated with that campaign. Import status, row count, column names, and errors appear on the campaign’s dataset page. Failed imports can be retried after correcting the source file or restoring the worker.
+Create a campaign and open its **Data** link from the dashboard. Upload CSV, XLSX, JSON, or PDF files, or paste a Google Sheets link. File and sheet imports are limited to 10 MB, 50 columns, and 100,000 rows. XLSX imports use the first worksheet. JSON must be a list of objects with the same keys. Text-based PDFs are imported as one text row per page; scanned image PDFs need OCR, which is not included. RankScale stores each imported row as JSON associated with the campaign. Import status, row count, column names, and errors appear on the campaign's dataset page. Failed imports can be retried after correcting the source or restoring the worker.
 
-CSV imports run in a Celery worker. Start Redis and the worker before uploading:
+Google Sheets links that are publicly viewable can be imported without connecting an account. Private sheets are supported after connecting Google with the read-only Sheets scope. Enable the Google Sheets API and configure the OAuth consent screen in Google Cloud. Create a Google OAuth web application client, add the callback URL to its authorized redirect URIs, and set `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URI` in `.env`. The example callback is `http://localhost:8000/integrations/google/callback/`; set it to the exact local or deployed URL you use. OAuth refresh tokens are encrypted with Django's `SECRET_KEY`, so keep that key stable and private.
+
+Dataset imports run in a Celery worker. Start Redis and the worker before uploading:
 
 ```sh
 docker compose up --build

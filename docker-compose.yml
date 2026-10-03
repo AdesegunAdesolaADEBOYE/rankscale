@@ -8,6 +8,9 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
       DATABASE_URL: postgresql://${POSTGRES_USER:-rankscale}:${POSTGRES_PASSWORD:-rankscale-local-only}@db:5432/${POSTGRES_DB:-rankscale}
       REDIS_URL: redis://redis:6379/0
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:8000/integrations/google/callback/}
     ports:
       - "8000:8000"
     volumes:
@@ -26,6 +29,8 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DATABASE_URL: postgresql://${POSTGRES_USER:-rankscale}:${POSTGRES_PASSWORD:-rankscale-local-only}@db:5432/${POSTGRES_DB:-rankscale}
       REDIS_URL: redis://redis:6379/0
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
     volumes:
       - media_data:/app/media
     depends_on:

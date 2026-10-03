@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -7,11 +10,18 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from kombu.exceptions import OperationalError
 
-from core.forms import CampaignForm, DatasetUploadForm, SignUpForm
-from core.models import Campaign, Dataset
+from core.forms import CampaignForm, DatasetUploadForm, GoogleSheetForm, SignUpForm
+from core.google_sheets import (
+    GoogleSheetsError,
+    create_oauth_flow,
+    encrypt_refresh_token,
+    oauth_is_configured,
+)
+from core.models import Campaign, Dataset, GoogleSheetsConnection
 from core.tasks import process_dataset
 
 
@@ -104,20 +114,50 @@ def _queue_dataset(dataset):
 @login_required
 def campaign_datasets(request, campaign_id):
     campaign = get_object_or_404(Campaign, pk=campaign_id, owner=request.user)
-    form = DatasetUploadForm(request.POST or None, request.FILES or None)
+    upload_form = DatasetUploadForm(
+        request.POST if request.POST.get("source") == "file" else None,
+        request.FILES if request.POST.get("source") == "file" else None,
+    )
+    sheet_form = GoogleSheetForm(
+        request.POST if request.POST.get("source") == "google_sheet" else None
+    )
 
-    if request.method == "POST" and form.is_valid():
-        uploaded_file = form.cleaned_data["file"]
-        dataset = Dataset.objects.create(
-            campaign=campaign,
-            original_filename=uploaded_file.name[:255],
-            file=uploaded_file,
-        )
-        if _queue_dataset(dataset):
-            messages.success(request, f"{dataset.original_filename} was queued for import.")
-        else:
-            messages.error(request, dataset.error_message)
-        return redirect("campaign_datasets", campaign_id=campaign.pk)
+    if request.method == "POST" and request.POST.get("source") == "file":
+        if upload_form.is_valid():
+            uploaded_file = upload_form.cleaned_data["file"]
+            source_format = {
+                ".csv": Dataset.SourceFormat.CSV,
+                ".xlsx": Dataset.SourceFormat.XLSX,
+                ".json": Dataset.SourceFormat.JSON,
+                ".pdf": Dataset.SourceFormat.PDF,
+            }[Path(uploaded_file.name).suffix.lower()]
+            dataset = Dataset.objects.create(
+                campaign=campaign,
+                original_filename=uploaded_file.name[:255],
+                source_format=source_format,
+                file=uploaded_file,
+            )
+            if _queue_dataset(dataset):
+                messages.success(request, f"{dataset.original_filename} was queued for import.")
+            else:
+                messages.error(request, dataset.error_message)
+            return redirect("campaign_datasets", campaign_id=campaign.pk)
+
+    if request.method == "POST" and request.POST.get("source") == "google_sheet":
+        if sheet_form.is_valid():
+            source_url = sheet_form.cleaned_data["url"]
+            sheet_id = source_url.split("/d/", 1)[1].split("/", 1)[0]
+            dataset = Dataset.objects.create(
+                campaign=campaign,
+                original_filename=f"Google Sheet {sheet_id}",
+                source_format=Dataset.SourceFormat.GOOGLE_SHEET,
+                source_url=source_url,
+            )
+            if _queue_dataset(dataset):
+                messages.success(request, "The Google Sheet was queued for import.")
+            else:
+                messages.error(request, dataset.error_message)
+            return redirect("campaign_datasets", campaign_id=campaign.pk)
 
     datasets = campaign.datasets.all()
     return render(
@@ -125,13 +165,92 @@ def campaign_datasets(request, campaign_id):
         "core/datasets.html",
         {
             "campaign": campaign,
-            "form": form,
+            "upload_form": upload_form,
+            "sheet_form": sheet_form,
             "datasets": datasets,
+            "google_connected": GoogleSheetsConnection.objects.filter(
+                user=request.user
+            ).exists(),
+            "google_oauth_configured": oauth_is_configured(),
             "has_running_import": datasets.filter(
                 status__in=(Dataset.Status.QUEUED, Dataset.Status.PROCESSING)
             ).exists(),
         },
     )
+
+
+@login_required
+def google_oauth_authorize(request):
+    redirect_uri = settings.GOOGLE_OAUTH_REDIRECT_URI or request.build_absolute_uri(
+        reverse("google_oauth_callback")
+    )
+    try:
+        flow = create_oauth_flow(redirect_uri)
+    except GoogleSheetsError as exc:
+        messages.error(request, str(exc))
+        return redirect("dashboard")
+
+    authorization_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+    )
+    request.session["google_sheets_oauth_state"] = state
+    return redirect(authorization_url)
+
+
+@login_required
+def google_oauth_callback(request):
+    if request.GET.get("error"):
+        messages.error(request, "Google Sheets connection was cancelled.")
+        return redirect("dashboard")
+
+    expected_state = request.session.pop("google_sheets_oauth_state", None)
+    if not expected_state or request.GET.get("state") != expected_state:
+        messages.error(request, "Google sign-in expired. Please try connecting again.")
+        return redirect("dashboard")
+
+    redirect_uri = settings.GOOGLE_OAUTH_REDIRECT_URI or request.build_absolute_uri(
+        reverse("google_oauth_callback")
+    ).split("?", 1)[0]
+    try:
+        flow = create_oauth_flow(redirect_uri, state=expected_state)
+        flow.fetch_token(authorization_response=request.build_absolute_uri())
+        refresh_token = flow.credentials.refresh_token
+        if not refresh_token:
+            existing = GoogleSheetsConnection.objects.filter(user=request.user).first()
+            if existing:
+                from core.google_sheets import decrypt_refresh_token
+
+                refresh_token = decrypt_refresh_token(existing.encrypted_refresh_token)
+            else:
+                raise GoogleSheetsError(
+                    "Google did not return a refresh token. Reconnect and approve offline access."
+                )
+        GoogleSheetsConnection.objects.update_or_create(
+            user=request.user,
+            defaults={
+                "encrypted_refresh_token": encrypt_refresh_token(refresh_token),
+                "scopes": " ".join(flow.credentials.scopes or settings.GOOGLE_SHEETS_SCOPES),
+            },
+        )
+    except Exception:
+        messages.error(
+            request,
+            "Google sign-in could not be completed. Check the OAuth client settings and try again.",
+        )
+        return redirect("dashboard")
+
+    messages.success(request, "Google Sheets is connected with read-only access.")
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def google_oauth_disconnect(request):
+    GoogleSheetsConnection.objects.filter(user=request.user).delete()
+    messages.success(request, "Your Google Sheets connection was removed.")
+    return redirect("dashboard")
 
 
 @login_required

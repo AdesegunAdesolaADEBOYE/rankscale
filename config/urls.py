@@ -9,6 +9,9 @@ from core.views import (
     dashboard,
     dataset_retry,
     health_check,
+    google_oauth_authorize,
+    google_oauth_callback,
+    google_oauth_disconnect,
     signup,
 )
 
@@ -25,5 +28,8 @@ urlpatterns = [
         dataset_retry,
         name="dataset_retry",
     ),
+    path("integrations/google/authorize/", google_oauth_authorize, name="google_oauth_authorize"),
+    path("integrations/google/callback/", google_oauth_callback, name="google_oauth_callback"),
+    path("integrations/google/disconnect/", google_oauth_disconnect, name="google_oauth_disconnect"),
     path("api/health/", health_check, name="health-check"),
 ]
