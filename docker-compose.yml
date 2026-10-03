@@ -10,6 +10,8 @@ services:
       REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
+    volumes:
+      - media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -24,6 +26,8 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DATABASE_URL: postgresql://${POSTGRES_USER:-rankscale}:${POSTGRES_PASSWORD:-rankscale-local-only}@db:5432/${POSTGRES_DB:-rankscale}
       REDIS_URL: redis://redis:6379/0
+    volumes:
+      - media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -54,3 +58,4 @@ services:
 
 volumes:
   postgres_data:
+  media_data:

@@ -34,6 +34,18 @@ Use Python 3.11 or newer. Create and activate a virtual environment, install `re
 | `redis` | Celery message broker |
 | `worker` | Asynchronous Celery worker |
 
+## Dataset ingestion
+
+Create a campaign, open its **Data** link from the dashboard, then upload a UTF-8 CSV with a header row. Files up to 10 MB, 50 columns, and 100,000 data rows are accepted. RankScale validates the headers and row widths, then stores each row as JSON associated with that campaign. Import status, row count, column names, and errors appear on the campaign’s dataset page. Failed imports can be retried after correcting the source file or restoring the worker.
+
+CSV imports run in a Celery worker. Start Redis and the worker before uploading:
+
+```sh
+docker compose up --build
+```
+
+For a direct Django run, set `REDIS_URL`, then start a worker in a second terminal with `celery -A config worker --loglevel=info`.
+
 ## Next product areas
 
-Campaigns, dataset ingestion, content templates, generated pages, tenant isolation, and lead capture are planned domain features and will be added incrementally.
+Content templates, generated pages, tenant isolation, and lead capture are planned domain features and will be added incrementally.

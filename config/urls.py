@@ -5,7 +5,9 @@ from django.urls import path
 from core.views import (
     RankScaleLoginView,
     campaign_create,
+    campaign_datasets,
     dashboard,
+    dataset_retry,
     health_check,
     signup,
 )
@@ -17,5 +19,11 @@ urlpatterns = [
     path("signup/", signup, name="signup"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("campaigns/new/", campaign_create, name="campaign_create"),
+    path("campaigns/<int:campaign_id>/datasets/", campaign_datasets, name="campaign_datasets"),
+    path(
+        "campaigns/<int:campaign_id>/datasets/<int:dataset_id>/retry/",
+        dataset_retry,
+        name="dataset_retry",
+    ),
     path("api/health/", health_check, name="health-check"),
 ]

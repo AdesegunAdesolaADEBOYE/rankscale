@@ -52,7 +52,7 @@
             <td><span class="keyword-text">{{ campaign.target_keyword }}</span></td>
             <td><span class="status-pill status-{{ campaign.status }}"><i></i>{{ campaign.get_status_display }}</span></td>
             <td class="date-cell">{{ campaign.updated_at|date:"M j, Y" }}</td>
-            <td class="row-action-cell"><span class="row-arrow" aria-hidden="true">↗</span></td>
+            <td class="row-action-cell"><a class="row-arrow dataset-table-link" href="{% url 'campaign_datasets' campaign.id %}">Data <span aria-hidden="true">→</span></a></td>
           </tr>
           {% endfor %}
         </tbody>

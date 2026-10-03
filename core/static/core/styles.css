@@ -192,6 +192,56 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .aside-note { display: flex; align-items: center; gap: 9px; color: #65745f; font-size: 10px; }
 .aside-note span:first-child { display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid #cbd9c2; border-radius: 50%; font-size: 8px; font-weight: 700; }
 
+/* Dataset ingestion */
+.dataset-table-link { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-size: 10px; font-weight: 700; }
+.dataset-table-link span { font-size: 14px; }
+.dataset-page-heading { align-items: center; }
+.dataset-page-heading h1 { overflow-wrap: anywhere; }
+.dataset-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, .8fr); align-items: start; gap: 16px; margin-bottom: 28px; }
+.dataset-upload-card, .dataset-info-card { padding: 22px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+.dataset-upload-card .form-card-heading { margin-bottom: 20px; }
+.dataset-upload-form .field-group { margin-bottom: 15px; }
+.dataset-upload-form input[type="file"] { width: 100%; min-height: 43px; padding: 8px; border: 1px dashed #cbd8cd; border-radius: 6px; background: #f9fbf8; color: #617068; font-size: 11px; }
+.dataset-upload-form input[type="file"]::file-selector-button { margin-right: 10px; padding: 6px 9px; border: 1px solid #dce5dc; border-radius: 5px; background: white; color: #43554a; font: inherit; font-weight: 600; cursor: pointer; }
+.dataset-upload-form small { color: #8b968e; font-size: 10px; }
+.dataset-info-card { position: sticky; top: 84px; background: #f8faf6; }
+.dataset-info-card .aside-mark { margin-bottom: 12px; }
+.dataset-info-card h2 { margin: 8px 0; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; }
+.dataset-info-card > p:not(.eyebrow) { margin: 0 0 16px; color: #7b877f; font-size: 11px; line-height: 1.6; }
+.dataset-info-line { display: flex; align-items: center; gap: 8px; margin-top: 9px; color: #66736b; font-size: 10px; }
+.dataset-info-line .metric-dot { width: 6px; height: 6px; flex: 0 0 auto; background: #79a77b; }
+.dataset-list-section { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.dataset-list-heading { min-height: 70px; }
+.dataset-list-heading .eyebrow { margin-bottom: 6px; }
+.dataset-list-heading h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; }
+.dataset-refresh-note { display: inline-flex; align-items: center; gap: 7px; color: #7c8980; font-size: 10px; }
+.dataset-refresh-note i { width: 7px; height: 7px; border-radius: 50%; background: #d0aa4f; animation: dataset-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes dataset-pulse { to { opacity: .35; } }
+.dataset-list { padding: 0 22px 7px; }
+.dataset-item { display: flex; align-items: flex-start; gap: 13px; padding: 17px 0; border-top: 1px solid #edf0ec; }
+.dataset-file-icon { display: grid; width: 37px; height: 37px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #edf4ed; color: var(--green); }
+.dataset-file-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.dataset-main { min-width: 0; flex: 1; }
+.dataset-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dataset-title-row h3 { max-width: 100%; overflow-wrap: anywhere; margin: 0; color: #344239; font-size: 12px; font-weight: 700; }
+.dataset-meta { margin: 5px 0 0; color: #829087; font-size: 10px; line-height: 1.55; overflow-wrap: anywhere; }
+.dataset-columns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.dataset-columns span { max-width: 100%; overflow: hidden; padding: 4px 7px; border-radius: 4px; background: #f2f5f1; color: #69766d; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.dataset-date { flex: 0 0 auto; padding-top: 3px; color: #929c95; font-size: 9px; }
+.status-queued { background: #f0f2ee; color: #69766e; }
+.status-processing { background: #f2edf8; color: #6d5882; }
+.status-processing i { background: #9d80bd; }
+.status-ready { background: #eaf4eb; color: #396e47; }
+.status-ready i { background: #66a675; }
+.status-failed { background: #fff0ee; color: #a83c3c; }
+.status-failed i { background: #c75d53; }
+.dataset-retry-form { margin-top: 8px; }
+.dataset-retry-form button { padding: 0; border: 0; background: transparent; cursor: pointer; font-size: 10px; }
+.dataset-empty { display: grid; justify-items: center; padding: 26px 18px 30px; border-top: 1px solid #edf0ec; text-align: center; }
+.dataset-empty .empty-spark { position: static; display: grid; width: 36px; height: 36px; margin-bottom: 10px; place-items: center; border-radius: 10px; background: #edf3e9; font-size: 17px; }
+.dataset-empty h3 { margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; }
+.dataset-empty p { max-width: 360px; margin: 7px 0 0; color: #7c8880; font-size: 11px; line-height: 1.5; }
+
 /* Sign in */
 .login-body { min-height: 100vh; background: #fff; }
 .login-layout { display: grid; min-height: 100vh; grid-template-columns: minmax(0, 1.12fr) minmax(400px, .88fr); }
@@ -308,6 +358,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .campaign-form-layout { grid-template-columns: 1fr; }
   .campaign-form-card { padding: 17px; }
   .form-aside { position: static; }
+  .dataset-layout { grid-template-columns: 1fr; gap: 10px; }
+  .dataset-upload-card, .dataset-info-card { padding: 17px; }
+  .dataset-info-card { position: static; }
+  .dataset-list-heading { align-items: flex-start; gap: 12px; padding: 17px 15px 13px; }
+  .dataset-refresh-note { padding-top: 4px; font-size: 9px; }
+  .dataset-list { padding-right: 15px; padding-left: 15px; }
+  .dataset-item { gap: 9px; }
+  .dataset-file-icon { width: 32px; height: 32px; }
+  .dataset-date { display: none; }
   .login-layout { display: flex; min-height: 100vh; flex-direction: column; }
   .login-story { display: none; }
   .login-panel { min-height: 100vh; align-items: stretch; justify-content: start; padding: 20px 22px 16px; }

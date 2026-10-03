@@ -1,8 +1,11 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.validators import FileExtensionValidator
 
 from core.models import Campaign
+
+MAX_DATASET_UPLOAD_SIZE = 10 * 1024 * 1024
 
 
 class SignUpForm(UserCreationForm):
@@ -28,3 +31,17 @@ class CampaignForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"placeholder": "e.g. Spring product launch"}),
             "target_keyword": forms.TextInput(attrs={"placeholder": "e.g. sustainable skincare"}),
         }
+
+
+class DatasetUploadForm(forms.Form):
+    file = forms.FileField(
+        label="CSV file",
+        validators=[FileExtensionValidator(allowed_extensions=("csv",))],
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv,text/csv"}),
+    )
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        if uploaded_file.size > MAX_DATASET_UPLOAD_SIZE:
+            raise forms.ValidationError("Choose a CSV file smaller than 10 MB.")
+        return uploaded_file
