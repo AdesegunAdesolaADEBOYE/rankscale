@@ -23,7 +23,7 @@ The Compose web service applies database migrations before starting. To run test
 
 ## Run Django directly
 
-Use Python 3.11 or newer. Create and activate a virtual environment, install `requirements.txt`, then run `python manage.py migrate` and `python manage.py runserver`. Without `DATABASE_URL`, Django uses a local SQLite database. Set `REDIS_URL` when dispatching Celery tasks.
+Use Python 3.11 or newer. Install Tesseract OCR 5 and its English language data on the machine that runs Celery (`tesseract-ocr` and `tesseract-ocr-eng` on Debian/Ubuntu; on Windows, install the Tesseract application and ensure `tesseract.exe` is on `PATH`). Create and activate a virtual environment, install `requirements.txt`, then run `python manage.py migrate` and `python manage.py runserver`. Without `DATABASE_URL`, Django uses a local SQLite database. Set `REDIS_URL` when dispatching Celery tasks.
 
 ## Services
 
@@ -36,7 +36,7 @@ Use Python 3.11 or newer. Create and activate a virtual environment, install `re
 
 ## Dataset ingestion
 
-Create a campaign and open its **Data** link from the dashboard. Upload CSV, XLSX, JSON, or PDF files, or paste a Google Sheets link. File and sheet imports are limited to 10 MB, 50 columns, and 100,000 rows. XLSX imports use the first worksheet. JSON must be a list of objects with the same keys. Text-based PDFs are imported as one text row per page; scanned image PDFs need OCR, which is not included. RankScale stores each imported row as JSON associated with the campaign. Import status, row count, column names, and errors appear on the campaign's dataset page. Failed imports can be retried after correcting the source or restoring the worker.
+Create a campaign and open its **Data** link from the dashboard. Upload CSV, XLSX, JSON, or PDF files, or paste a Google Sheets link. File and sheet imports are limited to 10 MB, 50 columns, and 100,000 rows. XLSX imports use the first worksheet. JSON must be a list of objects with the same keys. PDFs are imported as one text row per page. RankScale first extracts embedded text and runs Tesseract OCR on pages without extractable text. OCR recognizes printed text; scan quality and language affect accuracy. RankScale stores each imported row as JSON associated with the campaign. Import status, row count, column names, and errors appear on the campaign's dataset page. Failed imports can be retried after correcting the source or restoring the worker.
 
 Google Sheets links that are publicly viewable can be imported without connecting an account. Private sheets are supported after connecting Google with the read-only Sheets scope. Enable the Google Sheets API and configure the OAuth consent screen in Google Cloud. Create a Google OAuth web application client, add the callback URL to its authorized redirect URIs, and set `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URI` in `.env`. The example callback is `http://localhost:8000/integrations/google/callback/`; set it to the exact local or deployed URL you use. OAuth refresh tokens are encrypted with Django's `SECRET_KEY`, so keep that key stable and private.
 

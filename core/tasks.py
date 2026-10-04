@@ -4,6 +4,8 @@ import json
 import logging
 from datetime import date, datetime
 
+import pymupdf
+import pytesseract
 from celery import shared_task
 from django.db import transaction
 from openpyxl import load_workbook
@@ -22,6 +24,8 @@ logger = logging.getLogger(__name__)
 MAX_COLUMNS = 50
 MAX_ROWS = 100_000
 MAX_PDF_PAGES = 1_000
+PDF_OCR_DPI = 150
+PDF_OCR_MAX_PIXELS = 20_000_000
 ROW_BATCH_SIZE = 500
 MAX_CELL_SIZE = 1_000_000
 
@@ -172,25 +176,52 @@ def _process_json(dataset, binary_source):
 
 def _process_pdf(dataset, binary_source):
     try:
-        reader = PdfReader(binary_source, strict=True)
+        pdf_bytes = binary_source.read()
+        reader = PdfReader(io.BytesIO(pdf_bytes), strict=True)
         if reader.is_encrypted:
             raise DatasetImportError("Password-protected PDFs are not supported.")
         if len(reader.pages) > MAX_PDF_PAGES:
             raise DatasetImportError(f"A PDF can have at most {MAX_PDF_PAGES:,} pages.")
+        ocr_document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
 
         def records():
             for page_number, page in enumerate(reader.pages, start=1):
                 text = page.extract_text() or ""
+                if not text.strip():
+                    try:
+                        text = _ocr_pdf_page(ocr_document, page_number - 1)
+                    except pytesseract.pytesseract.TesseractNotFoundError as exc:
+                        raise DatasetImportError(
+                            "OCR is unavailable. Install the Tesseract engine and English language data on the Celery worker, then retry."
+                        ) from exc
                 if text.strip():
                     yield page_number, {"page": page_number, "text": text.strip()}
 
-        return _save_rows(dataset, ("page", "text"), records())
+        try:
+            return _save_rows(dataset, ("page", "text"), records())
+        finally:
+            ocr_document.close()
     except DatasetImportError:
         raise
     except Exception as exc:
         raise DatasetImportError(
-            "This PDF could not be read. Password-protected files and scanned images without text are not supported."
+            "This PDF could not be read. Check that it is not password-protected and that the Celery worker has Tesseract installed."
         ) from exc
+
+
+def _ocr_pdf_page(document, page_number):
+    """Render and OCR a scanned page when embedded text extraction finds nothing."""
+    page = document.load_page(page_number)
+    rect = page.rect
+    scale = PDF_OCR_DPI / 72
+    estimated_pixels = rect.width * rect.height * scale * scale
+    if estimated_pixels > PDF_OCR_MAX_PIXELS:
+        scale *= (PDF_OCR_MAX_PIXELS / estimated_pixels) ** 0.5
+    pixmap = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
+    from PIL import Image
+
+    image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+    return pytesseract.image_to_string(image, lang="eng")
 
 
 def _process_google_sheet(dataset):
