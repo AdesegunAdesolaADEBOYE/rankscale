@@ -14,14 +14,30 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from kombu.exceptions import OperationalError
 
-from core.forms import CampaignForm, DatasetUploadForm, GoogleSheetForm, SignUpForm
+from core.forms import (
+    CampaignForm,
+    ContentTemplateForm,
+    DatasetUploadForm,
+    GeneratedPageForm,
+    GoogleSheetForm,
+    LeadCaptureForm,
+    SignUpForm,
+)
 from core.google_sheets import (
     GoogleSheetsError,
     create_oauth_flow,
     encrypt_refresh_token,
     oauth_is_configured,
 )
-from core.models import Campaign, Dataset, GoogleSheetsConnection
+from core.models import (
+    Campaign,
+    ContentTemplate,
+    Dataset,
+    GeneratedPage,
+    GoogleSheetsConnection,
+    LeadCapture,
+    Workspace,
+)
 from core.tasks import process_dataset
 
 
@@ -37,11 +53,97 @@ def signup(request):
     form = SignUpForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
+        Workspace.ensure_for_user(user)
         login(request, user)
         messages.success(request, "Your RankScale account is ready.")
         return redirect("dashboard")
 
     return render(request, "core/signup.html", {"form": form})
+
+
+def _render_generated_page_content(campaign, template, overrides=None):
+    variables = {
+        "campaign_name": campaign.name,
+        "brand_name": campaign.name,
+        "target_keyword": campaign.target_keyword,
+        "website_url": campaign.website_url,
+        "company_name": campaign.name,
+    }
+    if template is not None:
+        for name in template.variables:
+            variables.setdefault(name, "")
+    if overrides:
+        variables.update(overrides)
+    rendered = template.content if template is not None else ""
+    for key, value in variables.items():
+        placeholder = "{{ " + key + " }}"
+        rendered = rendered.replace(placeholder, str(value))
+    return rendered
+
+
+@login_required
+def content_templates(request):
+    workspace = Workspace.ensure_for_user(request.user)
+    templates = ContentTemplate.objects.filter(workspace=workspace)
+    form = ContentTemplateForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        template = form.save(commit=False)
+        template.workspace = workspace
+        template.slug = template.slug or "template"
+        template.save()
+        messages.success(request, f"{template.title} was added to your template library.")
+        return redirect("content_templates")
+
+    return render(
+        request,
+        "core/content_templates.html",
+        {"templates": templates, "form": form, "workspace": workspace},
+    )
+
+
+@login_required
+def generated_pages(request):
+    workspace = Workspace.ensure_for_user(request.user)
+    pages = GeneratedPage.objects.filter(workspace=workspace).select_related("campaign", "template")
+    form = GeneratedPageForm(request.POST or None, user=request.user)
+
+    if request.method == "POST" and form.is_valid():
+        page = form.save(commit=False)
+        page.workspace = workspace
+        if page.template:
+            page.content = _render_generated_page_content(page.campaign, page.template)
+        else:
+            page.content = page.title
+        page.save()
+        messages.success(request, f"{page.title} was generated successfully.")
+        return redirect("generated_pages")
+
+    return render(
+        request,
+        "core/generated_pages.html",
+        {"pages": pages, "form": form, "workspace": workspace},
+    )
+
+
+@login_required
+def leads(request):
+    workspace = Workspace.ensure_for_user(request.user)
+    campaign_leads = LeadCapture.objects.filter(workspace=workspace).select_related("campaign")
+    form = LeadCaptureForm(request.POST or None, user=request.user)
+
+    if request.method == "POST" and form.is_valid():
+        lead = form.save(commit=False)
+        lead.workspace = workspace
+        lead.save()
+        messages.success(request, f"{lead.full_name} was added to your lead list.")
+        return redirect("leads")
+
+    return render(
+        request,
+        "core/leads.html",
+        {"leads": campaign_leads, "form": form, "workspace": workspace},
+    )
 
 
 @login_required

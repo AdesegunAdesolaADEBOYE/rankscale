@@ -1,5 +1,45 @@
 from django.conf import settings
 from django.db import models
+from django.utils.text import slugify
+
+
+class Workspace(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="workspaces",
+    )
+    name = models.CharField(max_length=120, default="Personal workspace")
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("name",)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name or self.owner.get_username())
+            slug = base
+            index = 2
+            while Workspace.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{index}"
+                index += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def ensure_for_user(user):
+        workspace = Workspace.objects.filter(owner=user).order_by("created_at").first()
+        if workspace is None:
+            workspace = Workspace.objects.create(
+                owner=user,
+                name=f"{user.get_full_name() or user.username}'s workspace",
+            )
+        return workspace
 
 
 class Campaign(models.Model):
@@ -12,6 +52,13 @@ class Campaign(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="campaigns",
+    )
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.SET_NULL,
+        related_name="campaigns",
+        null=True,
+        blank=True,
     )
     name = models.CharField(max_length=120)
     website_url = models.URLField(max_length=300)
@@ -26,6 +73,11 @@ class Campaign(models.Model):
 
     class Meta:
         ordering = ("-updated_at",)
+
+    def save(self, *args, **kwargs):
+        if self.workspace_id is None and self.owner_id:
+            self.workspace = Workspace.ensure_for_user(self.owner)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -93,6 +145,132 @@ class DatasetRow(models.Model):
                 name="unique_dataset_row_number",
             )
         ]
+
+
+class ContentTemplate(models.Model):
+    class Category(models.TextChoices):
+        LANDING_PAGE = "landing_page", "Landing page"
+        BLOG_POST = "blog_post", "Blog post"
+        LEAD_MAGNET = "lead_magnet", "Lead magnet"
+        OFFER = "offer", "Offer"
+
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="content_templates",
+    )
+    title = models.CharField(max_length=160)
+    slug = models.SlugField(max_length=160, unique=True)
+    category = models.CharField(
+        max_length=24,
+        choices=Category.choices,
+        default=Category.LANDING_PAGE,
+    )
+    description = models.TextField(blank=True)
+    content = models.TextField()
+    variables = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at",)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title)
+            slug = base or "template"
+            index = 2
+            while ContentTemplate.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{index}"
+                index += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+class GeneratedPage(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+        ARCHIVED = "archived", "Archived"
+
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="generated_pages",
+    )
+    campaign = models.ForeignKey(
+        Campaign,
+        on_delete=models.CASCADE,
+        related_name="pages",
+    )
+    template = models.ForeignKey(
+        ContentTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generated_pages",
+    )
+    title = models.CharField(max_length=160)
+    slug = models.SlugField(max_length=160)
+    content = models.TextField()
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("workspace", "slug"),
+                name="unique_workspace_generated_page_slug",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title)
+            slug = base or "page"
+            index = 2
+            while GeneratedPage.objects.filter(workspace=self.workspace, slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{index}"
+                index += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+class LeadCapture(models.Model):
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="leads",
+    )
+    campaign = models.ForeignKey(
+        Campaign,
+        on_delete=models.CASCADE,
+        related_name="leads",
+    )
+    full_name = models.CharField(max_length=140)
+    email = models.EmailField()
+    company = models.CharField(max_length=140, blank=True)
+    source = models.CharField(max_length=80, default="website")
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return self.full_name
 
 
 class GoogleSheetsConnection(models.Model):

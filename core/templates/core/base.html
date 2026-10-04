@@ -33,9 +33,18 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h8"/><circle cx="15" cy="14.5" r="2"/></svg>
         Campaigns
       </a>
-      <p class="nav-label nav-label-spaced">COMING NEXT</p>
-      <span class="nav-link nav-link-muted" aria-disabled="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg>Generated pages <span class="nav-soon">SOON</span></span>
-      <span class="nav-link nav-link-muted" aria-disabled="true"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="7" r="3"/><circle cx="14" cy="8" r="2.3"/><path d="M2 17c.3-3 2-4.5 5-4.5s4.7 1.5 5 4.5M12 13.2c2.8-.5 5.2.8 5.6 3.8"/></svg>Leads <span class="nav-soon">SOON</span></span>
+      <a class="nav-link {% if request.resolver_match.url_name == 'content_templates' %}is-active{% endif %}" href="{% url 'content_templates' %}">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg>
+        Templates
+      </a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'generated_pages' %}is-active{% endif %}" href="{% url 'generated_pages' %}">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h12v14H4zM7 7h6M7 10h6M7 13h3"/></svg>
+        Generated pages
+      </a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'leads' %}is-active{% endif %}" href="{% url 'leads' %}">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="7" r="3"/><circle cx="14" cy="8" r="2.3"/><path d="M2 17c.3-3 2-4.5 5-4.5s4.7 1.5 5 4.5M12 13.2c2.8-.5 5.2.8 5.6 3.8"/></svg>
+        Leads
+      </a>
     </nav>
     <div class="sidebar-bottom">
       <div class="help-box"><span class="help-spark">✳</span><strong>Build your search engine</strong><p>Start with a campaign and grow from there.</p><a href="{% url 'campaign_create' %}">Create a campaign <span aria-hidden="true">→</span></a></div>

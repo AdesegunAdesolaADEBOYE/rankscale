@@ -6,7 +6,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 
-from core.models import Campaign
+from core.models import Campaign, ContentTemplate, GeneratedPage, LeadCapture, Workspace
 
 MAX_DATASET_UPLOAD_SIZE = 10 * 1024 * 1024
 
@@ -33,6 +33,68 @@ class CampaignForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "e.g. Spring product launch"}),
             "target_keyword": forms.TextInput(attrs={"placeholder": "e.g. sustainable skincare"}),
+        }
+
+
+class ContentTemplateForm(forms.ModelForm):
+    variables = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "keyword, company_name, CTA"}),
+        help_text="Comma-separated variable names used in the template body.",
+    )
+
+    class Meta:
+        model = ContentTemplate
+        fields = ("title", "slug", "category", "description", "content", "variables")
+        widgets = {
+            "slug": forms.TextInput(attrs={"placeholder": "spring-launch"}),
+            "content": forms.Textarea(attrs={"rows": 12, "placeholder": "Write a reusable page or offer template..."}),
+            "description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def clean_variables(self):
+        variables = self.cleaned_data.get("variables", "")
+        if not variables:
+            return []
+        return [item.strip() for item in variables.split(",") if item.strip()]
+
+
+class GeneratedPageForm(forms.ModelForm):
+    campaign = forms.ModelChoiceField(queryset=Campaign.objects.none())
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user is None:
+            return
+        workspace = Workspace.ensure_for_user(user)
+        self.fields["campaign"].queryset = Campaign.objects.filter(owner=user)
+        self.fields["template"].queryset = ContentTemplate.objects.filter(workspace=workspace)
+
+    class Meta:
+        model = GeneratedPage
+        fields = ("campaign", "title", "slug", "template", "status")
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Spring landing page"}),
+            "slug": forms.TextInput(attrs={"placeholder": "spring-launch"}),
+            "template": forms.Select(),
+        }
+
+
+class LeadCaptureForm(forms.ModelForm):
+    campaign = forms.ModelChoiceField(queryset=Campaign.objects.none())
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            self.fields["campaign"].queryset = Campaign.objects.filter(owner=user)
+
+    class Meta:
+        model = LeadCapture
+        fields = ("campaign", "full_name", "email", "company", "source", "notes")
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 4, "placeholder": "Add context about interest, timeline, or conversion notes."}),
         }
 
 

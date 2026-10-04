@@ -120,3 +120,72 @@ def test_campaign_creation_rejects_invalid_website_url(client):
     assert response.status_code == 200
     assert b"Enter a valid URL" in response.content
     assert Campaign.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_user_can_create_a_content_template(client):
+    user = User.objects.create_user(username="mira", password="A-safe-password-123")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("content_templates"),
+        {
+            "title": "Spring landing page",
+            "slug": "spring-landing-page",
+            "category": "landing_page",
+            "description": "Hero copy for the product launch.",
+            "content": "Welcome to {{ campaign_name }}. We help {{ target_keyword }} growth.",
+            "variables": "campaign_name, target_keyword",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("content_templates")
+    assert user.workspaces.count() == 1
+    assert user.workspaces.first().content_templates.count() == 1
+
+
+@pytest.mark.django_db
+def test_user_can_generate_a_page_and_capture_a_lead(client):
+    user = User.objects.create_user(username="mira", password="A-safe-password-123")
+    campaign = Campaign.objects.create(
+        owner=user,
+        name="Spring launch",
+        website_url="https://example.com",
+        target_keyword="sustainable skincare",
+    )
+    template = campaign.workspace.content_templates.create(
+        title="Launch template",
+        slug="launch-template",
+        category="landing_page",
+        content="Hello {{ campaign_name }}. Search for {{ target_keyword }} today.",
+        variables=["campaign_name", "target_keyword"],
+    )
+    client.force_login(user)
+
+    page_response = client.post(
+        reverse("generated_pages"),
+        {
+            "campaign": campaign.id,
+            "title": "Launch page",
+            "slug": "launch-page",
+            "template": template.id,
+            "status": "draft",
+        },
+    )
+    lead_response = client.post(
+        reverse("leads"),
+        {
+            "campaign": campaign.id,
+            "full_name": "Nina Patel",
+            "email": "nina@example.com",
+            "company": "Northstar Labs",
+            "source": "website",
+            "notes": "Interested in a discovery call.",
+        },
+    )
+
+    assert page_response.status_code == 302
+    assert lead_response.status_code == 302
+    assert campaign.pages.filter(title="Launch page").count() == 1
+    assert campaign.leads.filter(email="nina@example.com").count() == 1

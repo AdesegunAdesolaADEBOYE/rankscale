@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% block title %}Content templates{% endblock %}
+{% block breadcrumb %}Templates{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">CONTENT SYSTEM</p>
+    <h1>Template library</h1>
+    <p class="page-subtitle">Store reusable page and campaign copy for faster production.</p>
+  </div>
+</section>
+
+<div class="dataset-layout">
+  <section class="dataset-upload-card">
+    <div class="form-card-heading">
+      <span class="form-step">01</span>
+      <div>
+        <h2>Create a template</h2>
+        <p>Use variables like {{ campaign_name }} or {{ target_keyword }} to personalize output.</p>
+      </div>
+    </div>
+    <form method="post" class="dataset-upload-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="field-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        </div>
+      {% endfor %}
+      <button class="button button-primary" type="submit">Save template</button>
+    </form>
+  </section>
+
+  <aside class="dataset-info-card">
+    <p class="eyebrow">WORKSPACE</p>
+    <h2>{{ workspace.name }}</h2>
+    <p>Templates belong to this workspace and can be reused across generated pages and campaign assets.</p>
+    <div class="dataset-info-grid">
+      <div class="dataset-info-line"><span class="metric-dot"></span>{{ templates|length }} saved templates</div>
+      <div class="dataset-info-line"><span class="metric-dot"></span>Shared by your team workspace</div>
+    </div>
+  </aside>
+</div>
+
+<section class="dataset-list-section">
+  <div class="section-heading dataset-list-heading">
+    <div><p class="eyebrow">TEMPLATE LIBRARY</p><h2>Saved templates</h2></div>
+  </div>
+  {% if templates %}
+    <div class="dataset-list">
+      {% for template in templates %}
+        <article class="dataset-item">
+          <div class="dataset-main">
+            <div class="dataset-title-row">
+              <h3>{{ template.title }}</h3>
+              <span class="status-pill status-draft"><i></i>{{ template.get_category_display }}</span>
+            </div>
+            <p class="dataset-meta">{{ template.description|default:"Reusable content block" }}</p>
+            {% if template.variables %}
+              <div class="dataset-columns" aria-label="Template variables">
+                {% for variable in template.variables %}<span>{{ variable }}</span>{% endfor %}
+              </div>
+            {% endif %}
+            <p class="dataset-meta">{{ template.content|truncatechars:180 }}</p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="dataset-empty"><span class="empty-spark" aria-hidden="true">*</span><h3>No templates yet</h3><p>Create the first reusable template for landing pages, offers, or lead magnets.</p></div>
+  {% endif %}
+</section>
+{% endblock %}
