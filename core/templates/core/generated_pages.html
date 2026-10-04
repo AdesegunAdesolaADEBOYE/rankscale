@@ -16,7 +16,7 @@
       <span class="form-step">01</span>
       <div>
         <h2>Generate a new page</h2>
-        <p>Use an existing template and map it to a campaign.</p>
+        <p>Pick a template, map its fields, then create a campaign-specific draft.</p>
       </div>
     </div>
     <form method="post" class="dataset-upload-form">
@@ -29,6 +29,7 @@
           {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
         </div>
       {% endfor %}
+      <p class="dataset-meta">Changing the template loads its variable editor. Required values must be filled before generating.</p>
       <button class="button button-primary" type="submit">Generate page</button>
     </form>
   </section>
@@ -36,7 +37,7 @@
   <aside class="dataset-info-card">
     <p class="eyebrow">WHAT THIS COVERS</p>
     <h2>Page generation basics</h2>
-    <p>Generated pages replace template variables with the selected campaign details, so each landing page can be customized quickly.</p>
+    <p>Campaign values are filled automatically. The selected template adds editable fields with defaults and required validation; entered values are stored with the page draft.</p>
     <div class="dataset-info-grid">
       <div class="dataset-info-line"><span class="metric-dot"></span>Template-driven</div>
       <div class="dataset-info-line"><span class="metric-dot"></span>Campaign-specific</div>

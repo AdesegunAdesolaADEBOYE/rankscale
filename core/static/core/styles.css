@@ -41,6 +41,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .workspace-copy { display: grid; flex: 1; min-width: 0; gap: 3px; }
 .workspace-copy strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .workspace-copy small { color: var(--muted); font-size: 11px; }
+.workspace-copy select { width: 100%; border: 0; background: transparent; color: var(--muted); font-size: 11px; }
+.workspace-copy a { color: var(--green-dark); font-size: 10px; font-weight: 600; }
 .chevron { color: #87918b; font-size: 17px; }
 .nav-label, .eyebrow { margin: 0; color: #83908a; font-size: 10px; font-weight: 700; letter-spacing: 1.1px; }
 .nav-label { padding: 0 11px 10px; }

@@ -37,6 +37,7 @@
         </div>
         <form method="post" class="login-form signup-form" novalidate>
           {% csrf_token %}
+          {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
           {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
           <div class="field-group"><label for="{{ form.username.id_for_label }}">Username</label><input id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" type="text" value="{{ form.username.value|default:'' }}" autocomplete="username" placeholder="Choose a username" required autofocus>{% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
           <div class="signup-name-row">

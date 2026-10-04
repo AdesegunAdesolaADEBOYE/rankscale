@@ -61,10 +61,13 @@
             <p class="dataset-meta">{{ template.description|default:"Reusable content block" }}</p>
             {% if template.variables %}
               <div class="dataset-columns" aria-label="Template variables">
-                {% for variable in template.variables %}<span>{{ variable }}</span>{% endfor %}
+                {% for variable in template.variables %}
+                  {% if variable.name %}<span>{{ variable.label|default:variable.name }}{% if variable.required %} · required{% endif %}</span>{% endif %}
+                {% endfor %}
               </div>
             {% endif %}
             <p class="dataset-meta">{{ template.content|truncatechars:180 }}</p>
+            <a class="text-link" href="{% url 'content_template_edit' template.id %}">Edit template and variables <span aria-hidden="true">→</span></a>
           </div>
         </article>
       {% endfor %}

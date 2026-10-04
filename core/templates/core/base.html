@@ -19,8 +19,20 @@
       <span>rankscale<span class="brand-period">.</span></span>
     </a>
     <div class="workspace-switcher">
-      <span class="workspace-avatar">{{ request.user.username|first|upper }}</span>
-      <span class="workspace-copy"><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>Personal workspace</small></span>
+      <span class="workspace-avatar">{{ current_workspace.name|first|upper }}</span>
+      <span class="workspace-copy">
+        <strong>{{ current_workspace.name }}</strong>
+        <form method="post" action="{% url 'workspace_switch' %}">
+          {% csrf_token %}
+          <label class="sr-only" for="workspace-choice">Switch workspace</label>
+          <select id="workspace-choice" name="workspace_id" onchange="this.form.submit()">
+            {% for workspace in available_workspaces %}
+              <option value="{{ workspace.id }}" {% if workspace.id == current_workspace.id %}selected{% endif %}>{{ workspace.name }}</option>
+            {% endfor %}
+          </select>
+        </form>
+        <a href="{% url 'workspace_settings' %}">Workspace &amp; members</a>
+      </span>
       <span class="chevron" aria-hidden="true">⌄</span>
     </div>
     <nav class="side-nav" aria-label="Main navigation">
@@ -44,6 +56,10 @@
       <a class="nav-link {% if request.resolver_match.url_name == 'leads' %}is-active{% endif %}" href="{% url 'leads' %}">
         <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="7" r="3"/><circle cx="14" cy="8" r="2.3"/><path d="M2 17c.3-3 2-4.5 5-4.5s4.7 1.5 5 4.5M12 13.2c2.8-.5 5.2.8 5.6 3.8"/></svg>
         Leads
+      </a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'workspace_settings' %}is-active{% endif %}" href="{% url 'workspace_settings' %}">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 2.5v2M10 15.5v2M17.5 10h-2M4.5 10h-2M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4M15.3 15.3l-1.4-1.4M6.1 6.1 4.7 4.7"/></svg>
+        Workspace settings
       </a>
     </nav>
     <div class="sidebar-bottom">

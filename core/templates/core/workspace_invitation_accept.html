@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+{% block title %}Accept workspace invitation{% endblock %}
+{% block breadcrumb %}Accept invitation{% endblock %}
+{% block content %}
+<section class="dataset-upload-card">
+  <div class="form-card-heading">
+    <span class="form-step">✳</span>
+    <div>
+      <h1>Join {{ invitation.workspace.name }}</h1>
+      <p>You were invited to join as a {{ invitation.get_role_display|lower }}.</p>
+    </div>
+  </div>
+  <p class="dataset-meta">You are signed in as {{ request.user.email }}. Accepting gives you access to this workspace’s campaigns and shared content.</p>
+  <form method="post" class="dataset-upload-form">
+    {% csrf_token %}
+    <button class="button button-primary" type="submit">Accept invitation</button>
+    <a class="button button-secondary" href="{% url 'dashboard' %}">Not now</a>
+  </form>
+</section>
+{% endblock %}

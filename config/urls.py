@@ -7,6 +7,7 @@ from core.views import (
     campaign_create,
     campaign_datasets,
     content_templates,
+    content_template_edit,
     dashboard,
     dataset_retry,
     generated_pages,
@@ -16,6 +17,11 @@ from core.views import (
     health_check,
     leads,
     signup,
+    workspace_member_remove,
+    workspace_invitation_accept,
+    workspace_invitation_revoke,
+    workspace_settings,
+    workspace_switch,
 )
 
 urlpatterns = [
@@ -32,8 +38,30 @@ urlpatterns = [
         name="dataset_retry",
     ),
     path("templates/", content_templates, name="content_templates"),
+    path(
+        "templates/<int:template_id>/edit/",
+        content_template_edit,
+        name="content_template_edit",
+    ),
     path("generated-pages/", generated_pages, name="generated_pages"),
     path("leads/", leads, name="leads"),
+    path("workspaces/", workspace_settings, name="workspace_settings"),
+    path("workspaces/switch/", workspace_switch, name="workspace_switch"),
+    path(
+        "workspaces/members/<int:member_id>/remove/",
+        workspace_member_remove,
+        name="workspace_member_remove",
+    ),
+    path(
+        "workspaces/invitations/<uuid:token>/accept/",
+        workspace_invitation_accept,
+        name="workspace_invitation_accept",
+    ),
+    path(
+        "workspaces/invitations/<int:invitation_id>/revoke/",
+        workspace_invitation_revoke,
+        name="workspace_invitation_revoke",
+    ),
     path("integrations/google/authorize/", google_oauth_authorize, name="google_oauth_authorize"),
     path("integrations/google/callback/", google_oauth_callback, name="google_oauth_callback"),
     path("integrations/google/disconnect/", google_oauth_disconnect, name="google_oauth_disconnect"),

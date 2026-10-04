@@ -1,0 +1,175 @@
+{% extends 'core/base.html' %}
+{% block title %}Workspace &amp; members{% endblock %}
+{% block breadcrumb %}Workspace &amp; members{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">TEAM SETTINGS</p>
+    <h1>{{ workspace.name }}</h1>
+    <p class="page-subtitle">Manage your workspace, invitations, and member access.</p>
+  </div>
+</section>
+
+<div class="dataset-layout">
+  <section class="dataset-upload-card">
+    <div class="form-card-heading">
+      <span class="form-step">01</span>
+      <div>
+        <h2>Create a workspace</h2>
+        <p>Keep a brand or client team’s campaigns and content separate.</p>
+      </div>
+    </div>
+    <form method="post" class="dataset-upload-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create">
+      {% for field in create_form %}
+        <div class="field-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      <button class="button button-primary" type="submit">Create workspace</button>
+    </form>
+  </section>
+
+  <section class="dataset-upload-card">
+    <div class="form-card-heading">
+      <span class="form-step">02</span>
+      <div>
+        <h2>Invite a teammate</h2>
+        <p>Send a time-limited invitation to their email address.</p>
+      </div>
+    </div>
+    {% if manager %}
+      <form method="post" class="dataset-upload-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="invite">
+        {% for field in invitation_form %}
+          <div class="field-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+        <button class="button button-primary" type="submit">Send invitation</button>
+      </form>
+      <p class="dataset-meta">Invitations expire after 7 days. Recipients must sign in or create an account using the invited email address.</p>
+    {% else %}
+      <p class="dataset-meta">Only workspace owners and admins can invite teammates.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="dataset-list-section">
+  <div class="section-heading dataset-list-heading">
+    <div><p class="eyebrow">ACCESS CONTROL</p><h2>Members <span class="count-pill">{{ members|length }}</span></h2></div>
+  </div>
+  <div class="dataset-list">
+    {% for row in members %}
+      {% with member=row.membership %}
+      <article class="dataset-item">
+        <span class="workspace-avatar">{{ member.user.username|first|upper }}</span>
+        <div class="dataset-main">
+          <div class="dataset-title-row">
+            <h3>{{ member.user.get_full_name|default:member.user.username }}</h3>
+            <span class="status-pill status-active"><i></i>{{ member.get_role_display }}</span>
+          </div>
+          <p class="dataset-meta">@{{ member.user.username }}{% if member.user.email %} · {{ member.user.email }}{% endif %}</p>
+        </div>
+        {% if manager and member.role != 'owner' %}
+          {% if member.role != 'admin' or is_owner %}
+            {% if member.user_id != request.user.id %}
+              <form method="post" class="dataset-retry-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_member">
+                <input type="hidden" name="member_id" value="{{ member.id }}">
+                {{ row.role_form.role }}
+                <button class="text-link" type="submit">Save role</button>
+              </form>
+              <form method="post" action="{% url 'workspace_member_remove' member.id %}">
+                {% csrf_token %}
+                <button class="text-link" type="submit">Remove</button>
+              </form>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </article>
+      {% endwith %}
+    {% endfor %}
+  </div>
+</section>
+
+{% if manager %}
+<section class="dataset-list-section">
+  <div class="section-heading dataset-list-heading">
+    <div><p class="eyebrow">INVITATIONS</p><h2>Pending invitations <span class="count-pill">{{ pending_invitations|length }}</span></h2></div>
+  </div>
+  {% if pending_invitations %}
+    <div class="dataset-list">
+      {% for invitation in pending_invitations %}
+        <article class="dataset-item">
+          <div class="dataset-main">
+            <div class="dataset-title-row">
+              <h3>{{ invitation.email }}</h3>
+              <span class="status-pill status-queued"><i></i>{{ invitation.get_role_display }}</span>
+            </div>
+            <p class="dataset-meta">Invited by {{ invitation.invited_by.username }} · Expires {{ invitation.expires_at|date:"M j, Y" }}</p>
+          </div>
+          <form method="post" action="{% url 'workspace_invitation_revoke' invitation.id %}">
+            {% csrf_token %}
+            <button class="text-link" type="submit">Revoke</button>
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="dataset-empty"><h3>No pending invitations</h3><p>New team invitations will appear here until accepted or expired.</p></div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if is_owner %}
+<section class="dataset-list-section">
+  <div class="section-heading dataset-list-heading">
+    <div><p class="eyebrow">OWNERSHIP</p><h2>Transfer workspace ownership</h2></div>
+  </div>
+  <div class="dataset-upload-card">
+    <p class="dataset-meta">The selected member becomes the owner; you will become an admin. The new owner gains control of roles and workspace deletion.</p>
+    <form method="post" class="dataset-upload-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="transfer">
+      {% for field in transfer_form %}
+        <div class="field-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      <button class="button button-secondary" type="submit">Transfer ownership</button>
+    </form>
+  </div>
+</section>
+
+<section class="dataset-list-section">
+  <div class="section-heading dataset-list-heading">
+    <div><p class="eyebrow">DANGER ZONE</p><h2>Delete workspace</h2></div>
+  </div>
+  <div class="dataset-upload-card">
+    <p class="dataset-meta">Deleting this workspace permanently deletes its campaigns, datasets, pages, templates, leads, and memberships. This cannot be undone.</p>
+    <form method="post" class="dataset-upload-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete">
+      {% for field in delete_form %}
+        <div class="field-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      <button class="button button-secondary" type="submit">Delete {{ workspace.name }}</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

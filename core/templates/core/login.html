@@ -62,7 +62,7 @@
           </div>
           <button class="button button-primary button-full" type="submit">Sign in <span aria-hidden="true">→</span></button>
         </form>
-        <p class="login-note">New to RankScale? <a class="auth-switch-link" href="{% url 'signup' %}">Create an account</a></p>
+        <p class="login-note">New to RankScale? <a class="auth-switch-link" href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
       </div>
       <footer class="login-footer"><span>© 2026 RankScale</span><span>Built for the long game.</span></footer>
     </section>

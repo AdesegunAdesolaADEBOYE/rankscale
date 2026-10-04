@@ -1,5 +1,8 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -33,13 +36,111 @@ class Workspace(models.Model):
 
     @staticmethod
     def ensure_for_user(user):
-        workspace = Workspace.objects.filter(owner=user).order_by("created_at").first()
+        workspace = (
+            Workspace.objects.filter(members__user=user)
+            .order_by("created_at")
+            .first()
+        )
         if workspace is None:
             workspace = Workspace.objects.create(
                 owner=user,
                 name=f"{user.get_full_name() or user.username}'s workspace",
             )
+        WorkspaceMember.objects.get_or_create(
+            workspace=workspace,
+            user=workspace.owner,
+            defaults={"role": WorkspaceMember.Role.OWNER},
+        )
+        WorkspaceMember.objects.get_or_create(
+            workspace=workspace,
+            user=user,
+            defaults={
+                "role": (
+                    WorkspaceMember.Role.OWNER
+                    if user.pk == workspace.owner_id
+                    else WorkspaceMember.Role.MEMBER
+                )
+            },
+        )
         return workspace
+
+
+class WorkspaceMember(models.Model):
+    class Role(models.TextChoices):
+        OWNER = "owner", "Owner"
+        ADMIN = "admin", "Admin"
+        MEMBER = "member", "Member"
+
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="members",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="workspace_memberships",
+    )
+    role = models.CharField(max_length=12, choices=Role.choices, default=Role.MEMBER)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("joined_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("workspace", "user"),
+                name="unique_workspace_member",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.workspace} ({self.role})"
+
+
+class WorkspaceInvitation(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REVOKED = "revoked", "Revoked"
+
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="invitations",
+    )
+    email = models.EmailField()
+    role = models.CharField(
+        max_length=12,
+        choices=(
+            (WorkspaceMember.Role.ADMIN, "Admin"),
+            (WorkspaceMember.Role.MEMBER, "Member"),
+        ),
+        default=WorkspaceMember.Role.MEMBER,
+    )
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="workspace_invitations_sent",
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    @property
+    def is_expired(self):
+        return self.expires_at <= timezone.now()
+
+    def __str__(self):
+        return f"{self.email} invited to {self.workspace}"
 
 
 class Campaign(models.Model):
@@ -55,10 +156,8 @@ class Campaign(models.Model):
     )
     workspace = models.ForeignKey(
         Workspace,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="campaigns",
-        null=True,
-        blank=True,
     )
     name = models.CharField(max_length=120)
     website_url = models.URLField(max_length=300)
@@ -216,6 +315,7 @@ class GeneratedPage(models.Model):
     title = models.CharField(max_length=160)
     slug = models.SlugField(max_length=160)
     content = models.TextField()
+    variable_values = models.JSONField(default=dict, blank=True)
     status = models.CharField(
         max_length=12,
         choices=Status.choices,
