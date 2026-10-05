@@ -28,7 +28,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* App shell */
 .app-body { min-height: 100vh; background: var(--canvas); }
-.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; width: 248px; flex-direction: column; padding: 27px 16px 18px; background: #fff; border-right: 1px solid var(--line); }
+.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; width: 248px; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; padding: 27px 16px 18px; background: #fff; border-right: 1px solid var(--line); }
+.sidebar > * { flex-shrink: 0; }
 .brand { display: inline-flex; align-items: center; gap: 10px; width: fit-content; padding: 0 11px; color: var(--green-dark); font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 0; }
 .brand-mark { display: inline-flex; height: 24px; align-items: end; gap: 3px; padding: 3px; border-radius: 7px; background: var(--green-dark); }
 .brand-mark span { width: 4px; border-radius: 3px; background: var(--lime); }
